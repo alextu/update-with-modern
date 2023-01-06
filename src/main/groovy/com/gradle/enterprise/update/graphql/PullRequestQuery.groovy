@@ -33,13 +33,13 @@ mutation pullRequest(
 }
 '''
 
-    static Query create(String recipeRunId, String branchName, List<Repository> repos) {
+    static Query create(String recipeRunId, String branchName, List<Repository> repos, String commitMessage) {
         def variables = [
             'isDraft'    : false,
             'commitInput': [
                 'recipeRunId' : recipeRunId,
                 'branchName'  : branchName,
-                'message'     : 'Update TODO',
+                'message'     : commitMessage,
                 'repositories': repos.stream().map { ['branch': it.branch, 'origin': it.origin, 'path': it.path] }.collect(Collectors.toUnmodifiableList())
             ],
         ]

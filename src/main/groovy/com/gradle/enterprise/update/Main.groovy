@@ -1,15 +1,15 @@
 package com.gradle.enterprise.update
 
 def repos = [
-    'gradle/android-cache-fix-gradle-plugin',
-    'gradle/common-custom-user-data-gradle-plugin',
-    'gradle/common-custom-user-data-maven-extension',
-    'gradle/gradle-build-scan-quickstart',
-    'gradle/gradle-enterprise-build-validation',
-    'gradle/maven-build-scan-quickstart',
-    'gradle/wrapper-upgrade-gradle-plugin',
-//    'alextu/gradle-sample-1',
-//    'alextu/gradle-sample-2'
+//    'gradle/android-cache-fix-gradle-plugin',
+//    'gradle/common-custom-user-data-gradle-plugin',
+//    'gradle/common-custom-user-data-maven-extension',
+//    'gradle/gradle-build-scan-quickstart',
+//    'gradle/gradle-enterprise-build-validation',
+//    'gradle/maven-build-scan-quickstart',
+//    'gradle/wrapper-upgrade-gradle-plugin',
+    'alextu/gradle-sample-1',
+    'alextu/gradle-sample-2'
 ]
 
 def recipe = '''
@@ -28,11 +28,4 @@ recipeList:
 
 def token = System.getenv('MODERNE_TOKEN')
 
-new RunUpdate(token, repos, 'upgrade-ge-plugin', recipe).run()
-
-
-
-
-
-
-
+new RunUpdate(token, repos, 'upgrade-ge-plugin', recipe, 'Update GE').run()

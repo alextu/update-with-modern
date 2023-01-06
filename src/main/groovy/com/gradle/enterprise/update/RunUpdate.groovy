@@ -16,12 +16,14 @@ class RunUpdate {
     List<String> repos
     String recipeYaml
     String branchName
+    String commitMessage
 
-    RunUpdate(String token, List<String> repos, String branchName, String recipeYaml) {
+    RunUpdate(String token, List<String> repos, String branchName, String recipeYaml, String commitMessage) {
         this.client = new Client(token)
         this.repos = repos
         this.recipeYaml = recipeYaml
         this.branchName = branchName
+        this.commitMessage = commitMessage
     }
 
     void run() {
@@ -31,16 +33,16 @@ class RunUpdate {
                 throw new RuntimeException("Recipe run '${runResult.id}' has finished with an error")
             }
 
-            def repositories = getRepositories(runResult)
-            println "Repositories report: ${repositories}"
-            def modifiedRepos = repositories.stream()
+            def repositoriesReport = getRepositories(runResult)
+            println repositoriesReport.toDisplayable()
+            def modifiedRepos = repositoriesReport.repositories.stream()
                 .filter { it.status == 'FINISHED' }
                 .collect(Collectors.toUnmodifiableList())
 
             if (!modifiedRepos.isEmpty()) {
                 def prId = submitPullRequest(runResult.id, modifiedRepos)
                 def commitJobReport = waitForCommitCompletion(prId).orTimeout(5, TimeUnit.MINUTES).get()
-                println "Commit Job Report: ${commitJobReport}"
+                println commitJobReport.toDisplayable()
             }
         } finally {
             executor.shutdown()
@@ -65,23 +67,24 @@ class RunUpdate {
         return new RecipeRun(id: recipeRunId, status: json.data.recipeRun.state)
     }
 
-    List<Repository> getRepositories(RecipeRun recipeRun) {
+    RepositoriesReport getRepositories(RecipeRun recipeRun) {
         def json = client.request(RepositoriesQuery.create(recipeRun.id))
-        return json.data.recipeRun.summaryResultsPages.edges.stream()
+        def repos = json.data.recipeRun.summaryResultsPages.edges.stream()
             .map {
                 new Repository(origin: it.node.repository.origin, path: it.node.repository.path,
                     branch: it.node.repository.branch, status: it.node.state)
             }
             .collect(Collectors.toUnmodifiableList())
+        return new RepositoriesReport(repositories: repos)
     }
 
     String submitPullRequest(String recipeRunId, List<Repository> repositories) {
-        def json = client.request(PullRequestQuery.create(recipeRunId, branchName, repositories))
+        def json = client.request(PullRequestQuery.create(recipeRunId, branchName, repositories, commitMessage))
         return json.data.pullRequest.id
     }
 
     CompletableFuture<CommitJobReport> waitForCommitCompletion(String prId) {
-        waitForCompletion({ queryCommitJob(prId) }, { jobReport -> jobReport.completed == 1 })
+        waitForCompletion({ queryCommitJob(prId) }, { jobReport -> jobReport.completed in [1, 2] })
     }
 
     <T> CompletableFuture waitForCompletion(Closure<T> query, Closure<Boolean> stopCondition) {
@@ -89,7 +92,7 @@ class RunUpdate {
         executor.submit({
             try {
                 T result = query()
-                while (!stopCondition(result)) {
+                while (!stopCondition(result) && !completableFuture.isDone()) {
                     Thread.sleep(Duration.ofSeconds(5).toMillis())
                     result = query()
                 }

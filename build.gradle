@@ -19,8 +19,13 @@ java {
     }
 }
 
+test {
+    useJUnitPlatform()
+}
+
 dependencies {
-    implementation("org.codehaus.groovy:groovy-all:3.0.13")
+    implementation 'org.codehaus.groovy:groovy-all:3.0.13'
+    testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'
 }
 
 application {
