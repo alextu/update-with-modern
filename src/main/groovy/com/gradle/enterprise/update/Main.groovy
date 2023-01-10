@@ -1,31 +1,19 @@
 package com.gradle.enterprise.update
 
-def repos = [
-//    'gradle/android-cache-fix-gradle-plugin',
-//    'gradle/common-custom-user-data-gradle-plugin',
-//    'gradle/common-custom-user-data-maven-extension',
-//    'gradle/gradle-build-scan-quickstart',
-//    'gradle/gradle-enterprise-build-validation',
-//    'gradle/maven-build-scan-quickstart',
-//    'gradle/wrapper-upgrade-gradle-plugin',
-    'alextu/gradle-sample-1',
-    'alextu/gradle-sample-2'
-]
-
-def recipe = '''
-type: specs.openrewrite.org/v1beta/recipe
-name: org.alextu.MyCustomRecipe
-displayName: Upgrade all GE plugins
-description: Fix all the things.
-recipeList:
-  - org.openrewrite.gradle.plugins.UpgradePluginVersion:
-      pluginIdPattern: com.gradle.enterprise
-      newVersion: 3.x
-  - org.openrewrite.gradle.plugins.UpgradePluginVersion:
-      pluginIdPattern: com.gradle.build-scan
-      newVersion: 3.x
-'''
+import groovy.cli.picocli.CliBuilder
 
 def token = System.getenv('MODERNE_TOKEN')
 
-new RunUpdate(token, repos, 'upgrade-ge-plugin', recipe, 'Update GE').run()
+def cli = new CliBuilder(name:'moderne')
+cli.usageMessage.customSynopsis('Executes Moderne/Openrewrite recipes on given repos. Env variable MODERNE_TOKEN should be set with a valid token')
+cli.repos(type:File, argName:'repos', 'Repositories to execute the recipe on as a path to a file containing one line per repo.')
+cli.recipe(type:File, argName:'recipe', 'Openrewrite/Moderne recipe to execute, as a path to a YAML file.')
+def options = cli.parse(args)
+if (!options?.recipe || !options?.repos || !token) {
+    cli.usage()
+} else {
+    def recipe = options.recipe.text
+    def repos = options.repos.text.split('\n') as List
+
+    new RunUpdate(token, repos, 'upgrade-ge-plugin-again', recipe, 'Update GE again').run()
+}
