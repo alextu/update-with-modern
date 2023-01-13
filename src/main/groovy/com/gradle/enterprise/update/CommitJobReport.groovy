@@ -10,13 +10,17 @@ class CommitJobReport {
     SummaryResult summaryResult
     List<CommitJob> commits
 
+    boolean isJobCompleted() {
+        completed == commits.size()
+    }
+
     String toDisplayable() {
         def builder = new StringBuilder()
         def rowUtil = new DisplayRow(30, 0, builder)
 
         builder << 'Pull request status'.center(80, '-')
         builder << '\n'
-        rowUtil.row('Job completed', completed in [1, 2] ? 'Yes' : 'No')
+        rowUtil.row('Job completed', isJobCompleted() ? 'Yes' : 'No')
         builder << '-'.center(80, '-')
         builder << '\n'
         commits.stream().forEach {

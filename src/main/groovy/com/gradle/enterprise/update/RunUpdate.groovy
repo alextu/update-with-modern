@@ -84,7 +84,7 @@ class RunUpdate {
     }
 
     CompletableFuture<CommitJobReport> waitForCommitCompletion(String prId) {
-        waitForCompletion({ queryCommitJob(prId) }, { jobReport -> jobReport.completed in [1, 2] })
+        waitForCompletion({ queryCommitJob(prId) }, { jobReport -> jobReport.isJobCompleted() })
     }
 
     <T> CompletableFuture waitForCompletion(Closure<T> query, Closure<Boolean> stopCondition) {
